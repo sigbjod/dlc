@@ -8,12 +8,19 @@ package com.dlc.hashcode;
  */
 public class MainX {
 
-  int [][] droneCoordinates;
-  int [][] droneTurns;
-  int [][] productTypeWeights;
+  int rows, columns, dronesNo, maxTurns, maxPayload, warehouseNo, productTypesNo, ordersNo;
 
-  int [][] warehouseCoordinates;
+  int [][] droneXY; // drone coordinates[14][0] gives x coord for 14 drone
 
+  int [] droneTurnsState; // droneTurnsState[0][0]
+
+  int [] productTypeWeights;
+
+  int [][] warehouseXY;
+
+  int [][] ordersXY;
+
+  int [][] orders; // product items to deliver by order
 
 
 
