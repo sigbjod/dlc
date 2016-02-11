@@ -11,7 +11,7 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = "com.dlc.hashcode.Main"
+mainClassName = "com.dlc.hashcode.MainX"
 
 run {
     if ( project.hasProperty("appArgs") ) {
