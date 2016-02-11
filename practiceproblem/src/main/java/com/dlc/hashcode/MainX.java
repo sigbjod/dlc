@@ -17,6 +17,8 @@ public class MainX {
   int [] productTypeWeights;
 
   int [][] warehouseXY;
+  
+  int[][] warehouseStock;
 
   int [][] ordersXY;
 
