@@ -115,6 +115,7 @@ public class MainX {
   void goDroneGo() {
     // take first order
     load(0, 0, 0, 1);
+
   }
 
   public String getCommands() {
@@ -135,9 +136,14 @@ public class MainX {
   public static void main(String[] args) {
     // load input
 
-    // loadInput ();
-    String inputFileName = "simple.in";
-    String outputFileName = inputFileName + ".result";
+    String inputFileName, outputFileName;
+    if (args.length == 1) {
+      inputFileName = args[0];
+      outputFileName = args[0] + ".result";
+    } else {
+      inputFileName = "simple.in";
+      outputFileName = inputFileName + ".result";
+    }
 
     ProblemInputX input = new ProblemInputX(inputFileName);
 
