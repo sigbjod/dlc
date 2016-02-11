@@ -91,13 +91,12 @@ public class ProblemInputX {
           ordersXY[i][0] = Integer.valueOf(coordinates.split(" ")[0]);
           ordersXY[i][1] = Integer.valueOf(coordinates.split(" ")[1]);
 
-          String[] quantities = ((String) iterator.next()).split(" "),
-              products = ((String) iterator.next()).split(" ");
+          int items = Integer.valueOf((String) iterator.next());
+          String[] products = ((String) iterator.next()).split(" ");
 
-          for (int j = 0; j < products.length; j++) {
-            int productNumber = Integer.valueOf(products[j]),
-                quantity = Integer.valueOf(quantities[j]);
-            orders[i][productNumber] = quantity;
+          for (int j = 0; j < items; j++) {
+            int productNumber = Integer.valueOf(products[j]);
+            orders[i][productNumber] += 1;
           }
         }
       }
