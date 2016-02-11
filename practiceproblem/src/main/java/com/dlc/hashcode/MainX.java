@@ -1,5 +1,10 @@
 package com.dlc.hashcode;
 
+import com.google.common.base.Joiner;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,6 +33,33 @@ public class MainX {
 
   List<String> commands;
 
+
+  public MainX(ProblemInputX input) {
+    this.rows = input.getNumberOfRows();
+    this.columns = input.getNumberOfColumns();
+    this.dronesNo = input.getNumberOfDrones();
+    this.maxTurns = input.getSimulationDeadline();
+    this.maxPayload = input.getDroneMaxLoad();
+    this.warehouseNo = input.getWarehouseXY().length;
+    this.productTypesNo = input.getProductTypeWeights().length;
+    this.ordersNo = input.getOrdersXY().length;
+    this.droneXY = new int[dronesNo][2];
+    this.droneTurnsState = new int[dronesNo];
+    this.productTypeWeights = input.getProductTypeWeights();
+    this.warehouseXY = input.getWarehouseXY();
+    this.warehouseStock = input.getWarehouseStock();
+    this.ordersXY = input.getOrdersXY();
+    this.orders = input.getOrders();
+
+    // commands
+    commands = new ArrayList<>();
+
+    // initial coordinates of the drones
+    for (int i = 0; i < dronesNo; i++) {
+      droneXY[i][0] = warehouseXY[0][0];
+      droneXY[i][1] = warehouseXY[0][1];
+    }
+  }
 
   // ​load command
   void load(int drone, int warehouse, int productType, int itemsNo) {
@@ -77,12 +109,26 @@ public class MainX {
 
   //
   static long  distanceBetween (int x1, int y1, int x2, int y2 ) {
-    return Math.round(Math.sqrt(((int)Math.pow(Math.abs(x1-x2), 2)) + ((int) Math.pow(Math.abs(y1-y2), 2))));
+    return Math.round(Math.sqrt(((int) Math.pow(Math.abs(x1 - x2), 2)) + ((int) Math.pow(Math.abs(y1 - y2), 2))));
   }
 
-  static void goDroneGo() {
+  void goDroneGo() {
     // take first order
+    load(0, 0, 0, 1);
+  }
 
+  public String getCommands() {
+    return commands.size() + "\n" + Joiner.on("\n").join(commands) + "\n";
+  }
+
+  private void writeToOutput(String outputFileName) {
+    try {
+      FileOutputStream fs = new FileOutputStream(outputFileName);
+      fs.write(getCommands().getBytes());
+      fs.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
 
@@ -90,9 +136,17 @@ public class MainX {
     // load input
 
     // loadInput ();
+    String inputFileName = "simple.in";
+    String outputFileName = inputFileName + ".result";
+
+    ProblemInputX input = new ProblemInputX(inputFileName);
+
+    MainX solution = new MainX(input);
 
     // pilot the drone
-    goDroneGo();
+    solution.goDroneGo();
+
+    solution.writeToOutput(outputFileName);
 
   }
 }
