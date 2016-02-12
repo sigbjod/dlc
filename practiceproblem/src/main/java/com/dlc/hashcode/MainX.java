@@ -17,9 +17,13 @@ public class MainX {
 
   int rows, columns, dronesNo, maxTurns, maxPayload, warehouseNo, productTypesNo, ordersNo;
 
-  int[][] droneXY; // drone coordinates[14][0] gives x coord for 14 drone
+  int[][] droneXY; // drone coordinates ex. droneXY[14][0] gives x coord for 14 drone
 
-  int[] droneTurnsState; // droneTurnsState[0][0]
+  int[] dronePayloadState; // drone payload
+
+  int[][] droneInventoryState; // products loaded on given drone
+
+  int[] droneTurnsState;
 
   int[] productTypeWeights;
 
@@ -59,6 +63,11 @@ public class MainX {
       droneXY[i][0] = warehouseXY[0][0];
       droneXY[i][1] = warehouseXY[0][1];
     }
+
+    dronePayloadState = new int[dronesNo];
+
+    droneInventoryState = new int[dronesNo][productTypesNo];
+
   }
 
   // ​load command
@@ -71,20 +80,59 @@ public class MainX {
     }
 
     String command = String.format("%s L %s %s %s", drone, warehouse, productType, itemsNo);
-    System.out.println(command);
+    String humanReadable = "";
+    if (isAtWareHouse(drone, warehouse)) {
+      humanReadable = String.format("Drone %s:l​oad ​%s items of product %s at warehouse %s.", drone, itemsNo, productType, warehouse);
+    } else {
+      humanReadable = String.format("Drone %s:fly to warehouse ​%s and load %s items of product %s.", drone, warehouse, itemsNo, productType);
+    }
+    System.out.println(humanReadable);
     commands.add(command);
+
     // update warehouse stock
     warehouseStock[warehouse][productType] -= itemsNo;
+
+
+    // updates drone inventory and payload
+    System.out.println(String.format("Drone %s payloaded with product %s with weight : %s ", drone, productType, productTypeWeights[productType]));
+    System.out.println(String.format("Drone %s payload before %s", drone, dronePayloadState[drone]));
+    dronePayloadState[drone] += productTypeWeights[productType] * itemsNo;
+    droneInventoryState[drone][productType] += itemsNo;
+    System.out.println(String.format("Drone %s payload after %s", drone, dronePayloadState[drone]));
+
+
+  }
+
+  boolean isAtWareHouse(int drone, int warehouse) {
+    return droneXY[drone][0] == warehouseXY[warehouse][0] && droneXY[drone][1] == warehouseXY[warehouse][1];
+  }
+
+  boolean isAtCustomerHouse(int drone, int order) {
+    return droneXY[drone][0] == ordersXY[order][0] && droneXY[drone][1] == ordersXY[order][1];
   }
 
   // ​deliver command
   void deliver(int drone, int order, int productType, int itemsNo) {
     String command = String.format("%s D %s %s %s", drone, order, productType, itemsNo);
-    System.out.println(command);
+    String humanReadable = "";
+    if (isAtCustomerHouse(drone, order)) {
+      humanReadable = String.format("Drone %s:deliver ​%s items of product %s at customer %s.", drone, itemsNo, productType, order);
+    } else {
+      humanReadable = String.format("Drone %s:fly to customer ​%s and deliver %s items of product %s.", drone, order, productType, itemsNo);
+    }
+    System.out.println(humanReadable);
     commands.add(command);
 
     // update orders stock
-    warehouseStock[order][productType] += itemsNo;
+    //    orders[order][productType] += itemsNo;
+
+    // update drone's inventory
+    System.out.println(String.format("Drone %s  with product %s with weight : %s ", drone, productType, productTypeWeights[productType]));
+    System.out.println(String.format("Drone %s payload before %s", drone, dronePayloadState[drone]));
+    dronePayloadState[drone] -= productTypeWeights[productType];
+    droneInventoryState[drone][productType] -= itemsNo;
+    System.out.println(String.format("Drone %s payload after %s", drone, dronePayloadState[drone]));
+
   }
 
   // wait command
@@ -98,24 +146,121 @@ public class MainX {
 
   // move drone to point x,y
   void moveTo(int drone, int x, int y) {
+    System.out.println(String.format("Drone is in  : (%s, %s) ", droneXY[drone][0], droneXY[drone][1]));
+    System.out.println(String.format("Drone goes to : (%s, %s) ", x, y));
+    updateTurns(drone, x, y);
     droneXY[drone][0] = x;
     droneXY[drone][1] = y;
+
   }
 
   // update drone state
-  void updateTurns(int drone, int turns) {
+  void updateTurns(int drone, int destx, int desty) {
+    long turns = distanceBetween(droneXY[drone][0], droneXY[drone][1], destx, desty);
+    System.out.println(String.format("Drone %s will take the distance %s", drone, turns));
+    System.out.println(String.format("Drone %s turns before : %s ", drone, droneTurnsState[drone]));
     droneTurnsState[drone] += turns;
+    System.out.println(String.format("Drone %s turns after : %s  ", drone, droneTurnsState[drone]));
+  }
+
+  // update drone state
+  boolean droneHasTurnsCapacityToWareHouseAndCustomerHouse(int drone, int destwx, int destwy, int destcx, int destcy) {
+    long turns1 = distanceBetween(droneXY[drone][0], droneXY[drone][1], destwx, destwy);
+    long turns2 = distanceBetween(droneXY[drone][0], droneXY[drone][1], destcx, destcy);
+    boolean hasCapacity = droneTurnsState[drone] + turns1 + turns2 <= maxPayload;
+    return hasCapacity;
   }
 
   //
-  static long  distanceBetween (int x1, int y1, int x2, int y2 ) {
+  static long distanceBetween(int x1, int y1, int x2, int y2) {
     return Math.round(Math.sqrt(((int) Math.pow(Math.abs(x1 - x2), 2)) + ((int) Math.pow(Math.abs(y1 - y2), 2))));
+  }
+
+  boolean warehouseHasProduct(int warehouse, int product, int itemsNo) {
+    return warehouseStock[warehouse][product] - itemsNo >= 0;
+  }
+
+  boolean droneHasCapacity(int drone, int product, int itemsNo) {
+    return dronePayloadState[drone] + itemsNo * productTypeWeights[product] <= maxPayload;
+  }
+
+  boolean droneIsEmpty(int drone) {
+    return dronePayloadState[drone] <= 0;
+  }
+
+
+  int getDroneWithLessTurns() {
+    int droneWithMinTurns = 0;
+    int minTurns = droneTurnsState[0];
+
+    for (int i = 1; i < droneTurnsState.length; i++) {
+      if (minTurns > droneTurnsState[i]) {
+        minTurns = droneTurnsState[i];
+        droneWithMinTurns = i;
+      }
+    }
+
+    return droneWithMinTurns;
+  }
+
+  void goDeliver(int drone, int order) {
+    System.out.println("Trying to deliver  ...");
+    if (!droneIsEmpty(drone)) {
+      for (int i = 0; i < productTypesNo; i++) {
+        if (droneInventoryState[drone][i] > 0) {
+          // deliver what has been added to drone's inventory
+          deliver(drone, order, i, droneInventoryState[drone][i]);
+          moveTo(drone, ordersXY[order][0], ordersXY[order][1]);
+        }
+      }
+    } else {
+      System.out.println("ERR : Drone is empty!");
+    }
+
   }
 
   void goDroneGo() {
     // take first order
-    load(0, 0, 0, 1);
+    // load(0, 0, 0, 1);
+    // take first order
+    // take the closest drone
+    // move all items to the destination
 
+    // take drone with less turns
+    int drone = getDroneWithLessTurns();
+    System.out.println("Drone with less turns : " + drone);
+
+    // take order0
+//    int order = 0;
+    int warehouse = 0;
+
+    for (int order = 0; order < 8 ; order++) {
+      System.out.println("Tackling order No " + order);
+      for (int productType = 0; productType < orders[order].length; productType++) {
+        int itemsNo = orders[order][productType];
+        if (droneHasCapacity(drone, productType, itemsNo)) {
+          if (droneHasTurnsCapacityToWareHouseAndCustomerHouse(drone, warehouseXY[warehouse][0], warehouseXY[warehouse][1], ordersXY[order][0], ordersXY[order][1])) {
+            if (warehouseHasProduct(warehouse, productType, itemsNo)) {
+              if (itemsNo > 0) {
+                load(drone, warehouse, productType, itemsNo);
+                moveTo(drone, warehouseXY[warehouse][0], warehouseXY[warehouse][1]);
+              }
+            } else {
+              System.out.println(String.format("ERR : Warehouse has NO more %s items of product %s", itemsNo, productType));
+            }
+          } else {
+            System.out.println("ERR : Drone has NO more TURNS capacity");
+            drone = getDroneWithLessTurns();
+            System.out.println("New drone is assigned : " + drone);
+
+          }
+        } else {
+          System.out.println("ERR : Drone has NOT ENOUGH capacity");
+          goDeliver(drone, order);
+        }
+      }
+      goDeliver(drone, order);
+    }
   }
 
   public String getCommands() {
@@ -141,7 +286,8 @@ public class MainX {
       inputFileName = args[0];
       outputFileName = args[0] + ".result";
     } else {
-      inputFileName = "simple.in";
+      inputFileName = "mother_of_all_warehouses.in";
+//      inputFileName = "simple.in";
       outputFileName = inputFileName + ".result";
     }
 
